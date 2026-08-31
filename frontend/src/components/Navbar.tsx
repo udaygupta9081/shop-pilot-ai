@@ -1,15 +1,20 @@
+
+import { Link } from "react-router-dom";
 const Navbar = () => {
   return (
     <div className="w-full h-16 bg-[#111111]">
       <div className="w-[80%] h-full mx-auto flex items-center justify-between">
         <div className="text-white font-bold text-xl">ShopPilot</div>
         <div className="flex items-center gap-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search"
-              className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500 w-64"
-            />
+          <div className="relative" >
+            <Link to="/search">
+              <input
+                type="text"
+                placeholder="Search"
+                className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500 w-96"
+
+              />
+            </Link>
           </div>
         </div>
         <div className="flex items-center gap-6">
