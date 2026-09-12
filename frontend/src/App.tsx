@@ -5,6 +5,8 @@ import Navbar from "./components/Navbar.tsx";
 import Footer from "./components/Footer.tsx";
 import { Outlet } from "react-router-dom";
 import Search from "./pages/search";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 const Layout = () => {
   return (
@@ -22,6 +24,8 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/search" element={<Search />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
       </Route>
     </Routes>
   );
