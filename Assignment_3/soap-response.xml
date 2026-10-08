@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope
+    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:mb="http://sms.msgbridge.example/schema/v1">
+  <soap:Body>
+    <mb:SendSmsResponse>
+      <mb:messageId>MBMSG-90417726</mb:messageId>
+      <mb:clientRef>ALERT-20261008-0042</mb:clientRef>
+      <mb:status>ACCEPTED</mb:status>
+      <mb:segments>1</mb:segments>
+      <mb:acceptedAt>2026-10-08T10:15:31Z</mb:acceptedAt>
+    </mb:SendSmsResponse>
+  </soap:Body>
+</soap:Envelope>

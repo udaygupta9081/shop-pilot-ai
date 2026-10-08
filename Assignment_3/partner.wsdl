@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MsgBridge SMS Gateway - partner contract consumed by ShopPilot AI.
+  SOAP 1.1, document/literal, one operation: SendSms.
+-->
+<wsdl:definitions
+    name="MsgBridgeSms"
+    targetNamespace="http://sms.msgbridge.example/wsdl/v1"
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:tns="http://sms.msgbridge.example/wsdl/v1"
+    xmlns:mb="http://sms.msgbridge.example/schema/v1">
+
+  <!-- 1. TYPES: the data shapes (XSD) -->
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://sms.msgbridge.example/schema/v1"
+                elementFormDefault="qualified">
+
+      <xsd:element name="PartnerAuth">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="accountId" type="xsd:string"/>
+            <xsd:element name="apiKey"    type="xsd:string"/>
+            <xsd:element name="timestamp" type="xsd:dateTime"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="SendSmsRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="clientRef"  type="xsd:string"/>
+            <xsd:element name="senderId"   type="xsd:string"/>
+            <xsd:element name="recipient"  type="xsd:string"/>
+            <xsd:element name="templateId" type="xsd:string"/>
+            <xsd:element name="message"    type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="SendSmsResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="messageId"  type="xsd:string"/>
+            <xsd:element name="clientRef"  type="xsd:string"/>
+            <xsd:element name="status"     type="xsd:string"/>
+            <xsd:element name="segments"   type="xsd:int"/>
+            <xsd:element name="acceptedAt" type="xsd:dateTime"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="SmsFault">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="code"       type="xsd:string"/>
+            <xsd:element name="reason"     type="xsd:string" minOccurs="0"/>
+            <xsd:element name="retryable"  type="xsd:boolean"/>
+            <xsd:element name="gatewayRef" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </wsdl:types>
+
+  <!-- 2. MESSAGES: what travels on the wire -->
+  <wsdl:message name="SendSmsInput">
+    <wsdl:part name="auth" element="mb:PartnerAuth"/>
+    <wsdl:part name="body" element="mb:SendSmsRequest"/>
+  </wsdl:message>
+  <wsdl:message name="SendSmsOutput">
+    <wsdl:part name="body" element="mb:SendSmsResponse"/>
+  </wsdl:message>
+  <wsdl:message name="SendSmsFaultMessage">
+    <wsdl:part name="detail" element="mb:SmsFault"/>
+  </wsdl:message>
+
+  <!-- 3. PORT TYPE: the abstract interface -->
+  <wsdl:portType name="SmsPortType">
+    <wsdl:operation name="SendSms">
+      <wsdl:input  message="tns:SendSmsInput"/>
+      <wsdl:output message="tns:SendSmsOutput"/>
+      <wsdl:fault  name="SmsFault" message="tns:SendSmsFaultMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <!-- 4. BINDING: SOAP 1.1 over HTTP, document/literal -->
+  <wsdl:binding name="SmsSoapBinding" type="tns:SmsPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="SendSms">
+      <soap:operation soapAction="http://sms.msgbridge.example/wsdl/v1/SendSms"/>
+      <wsdl:input>
+        <soap:header message="tns:SendSmsInput" part="auth" use="literal"/>
+        <soap:body parts="body" use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="SmsFault">
+        <soap:fault name="SmsFault" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <!-- 5 + 6. SERVICE / PORT: the concrete endpoint -->
+  <wsdl:service name="MsgBridgeSmsService">
+    <wsdl:port name="SmsPort" binding="tns:SmsSoapBinding">
+      <soap:address location="https://api.msgbridge.example/soap/v1/sms"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

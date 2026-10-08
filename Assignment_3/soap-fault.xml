@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope
+    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:mb="http://sms.msgbridge.example/schema/v1">
+  <soap:Body>
+    <soap:Fault>
+      <faultcode>soap:Client</faultcode>
+      <faultstring>Recipient cannot receive this message</faultstring>
+      <faultactor>https://api.msgbridge.example/soap/v1/sms</faultactor>
+      <detail>
+        <mb:SmsFault>
+          <mb:code>invalid_recipient</mb:code>
+          <mb:reason>DND_REGISTERED</mb:reason>
+          <mb:retryable>false</mb:retryable>
+          <mb:gatewayRef>MBERR-4410873</mb:gatewayRef>
+        </mb:SmsFault>
+      </detail>
+    </soap:Fault>
+  </soap:Body>
+</soap:Envelope>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope
+    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:mb="http://sms.msgbridge.example/schema/v1">
+  <soap:Header>
+    <mb:PartnerAuth>
+      <mb:accountId>SHOPPILOT-ALERTS-0017</mb:accountId>
+      <mb:apiKey>mbk_live_demo_5d82c1b0e3</mb:apiKey>
+      <mb:timestamp>2026-10-08T10:15:30Z</mb:timestamp>
+    </mb:PartnerAuth>
+  </soap:Header>
+  <soap:Body>
+    <mb:SendSmsRequest>
+      <mb:clientRef>ALERT-20261008-0042</mb:clientRef>
+      <mb:senderId>SHPLOT</mb:senderId>
+      <mb:recipient>+919876543210</mb:recipient>
+      <mb:templateId>1107160000000012345</mb:templateId>
+      <mb:message>ShopPilot AI: Alert set for Laptop A. We will SMS you when its price falls below Rs 70,000.</mb:message>
+    </mb:SendSmsRequest>
+  </soap:Body>
+</soap:Envelope>
