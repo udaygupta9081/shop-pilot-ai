@@ -1,0 +1,2 @@
+"""ShopPilot AI inference service."""
+

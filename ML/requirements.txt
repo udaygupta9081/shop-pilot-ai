@@ -1,0 +1,18 @@
+# Runtime dependencies. The supplied artifact records scikit-learn 1.6.1.
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1
+pydantic>=2.7,<3
+pandas>=2.0,<3
+numpy>=1.26,<3
+scipy>=1.11,<2
+joblib>=1.3,<2
+
+# Keep the artifact's training version on supported Python versions. Python 3.14
+# environments use a compatible current release and the loader's narrow shim.
+scikit-learn==1.6.1; python_version < "3.14"
+scikit-learn>=1.9,<1.10; python_version >= "3.14"
+
+# Test dependencies
+pytest>=8,<9
+httpx>=0.27,<1
+
