@@ -1,7 +1,8 @@
 import Corousal from "../components/Corousal";
 import Ranked from "../components/Ranked";
 import TopRatedAllCategories from "../components/TopRatedAllCategories";
-import Categories from "../components/categories";
+import HomeCategories from "../components/HomeCategories";
+import { Link } from "react-router-dom";
 import WhyTrust from "../components/WhyTrust";
 
 const Home = () => {
@@ -53,22 +54,19 @@ const Home = () => {
               </h2>
             </div>
             <div>
-              <button
-                type="button"
+              <Link
+                to="/categories"
                 className="border border-black bg-white hover:bg-black text-black hover:text-white px-5 py-2.5 text-xs font-bold tracking-wider uppercase transition-all duration-200 flex items-center gap-2 cursor-pointer group shadow-sm active:scale-95"
-              >
+                >
                 <span>BROWSE ALL CATEGORIES</span>
                 <span className="text-emerald-600 font-bold group-hover:translate-x-0.5 transition-transform">
                   →
                 </span>
-              </button>
+              </Link>
             </div>
           </div>
 
-          {/* Reusable Categories Grid with subHeading passed as props */}
-          <Categories subHeading="Beauty & Personal Care" />
-          <Categories subHeading="Electronics and Appliances" />
-          <Categories subHeading="Sports & Fitness" />
+          <HomeCategories />
         </section>
 
         {/* All Categories Top Cards Section */}
@@ -84,15 +82,15 @@ const Home = () => {
               </p>
             </div>
             <div>
-              <button
-                type="button"
+              <Link
+                to="/categories"
                 className="border border-black bg-white hover:bg-black text-black hover:text-white px-5 py-2.5 text-xs font-bold tracking-wider uppercase transition-all duration-200 flex items-center gap-2 cursor-pointer group shadow-sm active:scale-95"
-              >
+                >
                 <span>BROWSE ALL CATEGORIES</span>
                 <span className="text-emerald-600 font-bold group-hover:translate-x-0.5 transition-transform">
                   →
                 </span>
-              </button>
+              </Link>
             </div>
           </div>
 
