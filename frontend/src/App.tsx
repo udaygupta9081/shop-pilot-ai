@@ -7,6 +7,9 @@ import { Outlet } from "react-router-dom";
 import Search from "./pages/search";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import CategoriesIndex from "./pages/CategoriesIndex";
+import CategoryListing from "./pages/CategoryListing";
+import ProductDetail from "./pages/ProductDetail";
 
 const Layout = () => {
   return (
@@ -24,6 +27,10 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/search" element={<Search />} />
+        <Route path="/categories" element={<CategoriesIndex />} />
+        <Route path="/categories/:mainSlug" element={<CategoryListing />} />
+        <Route path="/categories/:mainSlug/:subSlug" element={<CategoryListing />} />
+        <Route path="/product/:asin" element={<ProductDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Route>
