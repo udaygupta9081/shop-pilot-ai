@@ -8,7 +8,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "import:dry": "node scripts/importCsv.js --dry-run",
+    "import": "node scripts/importCsv.js",
+    "check:categories": "node scripts/checkCategoryMap.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -18,6 +21,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.4",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "csv-parse": "^5.6.0"
   }
 }
