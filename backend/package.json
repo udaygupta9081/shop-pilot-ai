@@ -17,11 +17,11 @@
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
+    "csv-parse": "^7.0.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.4",
-    "nodemon": "^3.1.14",
-    "csv-parse": "^5.6.0"
+    "nodemon": "^1.14.10"
   }
 }
