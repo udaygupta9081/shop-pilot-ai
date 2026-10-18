@@ -41,8 +41,10 @@ def synthesize_verdict(product_name: str, vectorstore, query_hint: str = "") -> 
         print(f"  ↳ Total context length passed to LLM: {len(context)} characters", flush=True)
 
         print("🤖 [LLM] Calling Gemini Flash...", flush=True)
-        # print("🤖 [LLM] Calling HuggingFace...", flush=True)
-        llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", temperature=0.2,google_api_key=os.environ.get("GOOGLE_API_KEY"))
+        gemini_model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        if "3.6" in gemini_model:
+            gemini_model = "gemini-1.5-flash"
+        llm = ChatGoogleGenerativeAI(model=gemini_model, temperature=0.2, google_api_key=os.environ.get("GOOGLE_API_KEY"))
         # llm_endpoint = HuggingFaceEndpoint(
         #     repo_id="Qwen/Qwen3.8-27B",
         #     task="text-generation",

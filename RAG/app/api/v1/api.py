@@ -1,10 +1,14 @@
+
+# pyrefly: ignore [missing-import]
 from fastapi import APIRouter
 from app.api.v1.endpoints.review import router as review_router
+from app.api.v1.endpoints.naming import router as naming_router 
 
 api_router = APIRouter()
 
-# Review Agent Endpoints
+# Agent Endpoints
 api_router.include_router(review_router)
+api_router.include_router(naming_router, prefix="/naming")
 
 # Future Agents can be mounted here cleanly:
 # from app.api.v1.endpoints.comparison import router as comparison_router

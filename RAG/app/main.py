@@ -30,6 +30,7 @@ def create_app() -> FastAPI:
     )
 
     # Mount API routers
+    application.include_router(api_router, prefix="/api/v1")
     application.include_router(api_router)
 
     @application.get("/health", tags=["Health"])

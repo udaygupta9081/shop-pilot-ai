@@ -23,3 +23,4 @@ def get_verdict(
     """
     product = Product(id=product_id, name=product_name)
     return get_or_build_verdict(product, include_debug=debug)
+

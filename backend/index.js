@@ -15,7 +15,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoute)
 app.use("/api/conversation", chatRoutes)
 
-app.use((req, res, err, next) => {
+app.use((err, req, res, next) => {
     const errorStatus = err.status || 500;
     const errorMessage = err.message || "Something went wrong"
 
@@ -25,8 +25,7 @@ app.use((req, res, err, next) => {
         message: errorMessage,
         stack: err.stack
     })
-}
-)
+})
 
 app.listen(4000, () => {
     connectDB(process.env.MONGO_URI);

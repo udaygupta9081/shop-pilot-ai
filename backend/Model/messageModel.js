@@ -8,6 +8,7 @@ const messageSchema = new Schema({
         ref: "Conversation"
     },
     sender: {
+        type: String,
         enum: ["User", "Assistent"],
         required: true
     },
