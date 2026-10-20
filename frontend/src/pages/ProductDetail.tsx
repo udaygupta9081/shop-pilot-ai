@@ -4,7 +4,7 @@ import { getProduct } from "../api/catalog";
 import { useAsync } from "../hooks/useAsync";
 import { ErrorState } from "../components/ProductGrid";
 import ProductImage from "../components/ProductImage";
-import { formatCount, formatPrice, formatRating, safeExternalUrl } from "../utils/format";
+import { formatAiScore, formatCount, formatPrice, formatRating } from "../utils/format";
 
 const ProductDetail = () => {
   const { asin = "" } = useParams();
@@ -33,7 +33,7 @@ const ProductDetail = () => {
   const price = formatPrice(p.price);
   const rating = formatRating(p.stars);
   const reviews = formatCount(p.reviews);
-  const original = safeExternalUrl(p.productURL);
+  const aiScore = formatAiScore(p.aiProductScore);
 
   return (
     <div className="w-full min-h-[calc(100vh-4rem)] bg-white pb-16">
@@ -59,16 +59,15 @@ const ProductDetail = () => {
                 {reviews && <span className="text-gray-500">({reviews} reviews)</span>}
               </div>
             )}
+            {aiScore && (
+              <div className="self-start rounded-md border border-indigo-100 bg-indigo-50 px-3 py-2" title="AI product score out of 100">
+                <p className="text-[10px] font-bold tracking-wider uppercase text-indigo-600">AI Score</p>
+                <p className="text-lg font-bold text-indigo-800">{aiScore}<span className="text-sm font-semibold text-indigo-500"> / 100</span></p>
+              </div>
+            )}
             {price ? <p className="text-3xl font-bold text-black">{price}</p> : <p className="text-sm text-gray-500">Price not available</p>}
             {p.boughtInLastMonth > 0 && (
               <p className="text-sm text-gray-600">{formatCount(p.boughtInLastMonth)} bought in the past month</p>
-            )}
-            {original ? (
-              <a href={original} target="_blank" rel="noopener noreferrer" className="self-start border border-black bg-black text-white hover:bg-white hover:text-black px-5 py-3 text-xs font-bold tracking-wider uppercase transition-colors">
-                View on Amazon ↗
-              </a>
-            ) : (
-              <p className="text-sm text-gray-500">No external product link available.</p>
             )}
           </div>
         </div>

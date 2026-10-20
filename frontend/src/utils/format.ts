@@ -31,6 +31,13 @@ export function formatRating(stars: number | null | undefined): string | null {
     : null;
 }
 
+/** AI score as a whole number out of 100, e.g. "88". Null when missing. */
+export function formatAiScore(score: number | null | undefined): string | null {
+  return typeof score === "number" && Number.isFinite(score) && score > 0
+    ? String(Math.round(score))
+    : null;
+}
+
 /** Only allow http(s) links to be rendered as external hrefs. */
 export function safeExternalUrl(url: string | null | undefined): string | null {
   if (!url) return null;

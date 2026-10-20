@@ -6,6 +6,8 @@ export interface ProductSummary {
   stars: number | null;
   reviews: number | null;
   isBestSeller: boolean;
+  /** AI product score, 0-100 (null when the product has none) */
+  aiProductScore: number | null;
   mainCategory: string;
   mainSlug: string;
   subcategory: string;
@@ -20,7 +22,6 @@ export interface ProductDetails extends ProductSummary {
   bestsellerProbabilityPercent: number | null;
   predictedBestseller: boolean;
   predictionLabel: string | null;
-  aiProductScore: number | null;
 }
 
 export interface Paged<T> {
