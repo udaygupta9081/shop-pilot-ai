@@ -26,6 +26,7 @@ export const getAllChats = async (req, res, next) => {
     try {
         const { id } = req.user;
         if (!id) return res.status(401).json("Unauthorized")
+        console.log(req.user)
         const chats = await Conversation.find({ userId: new mongoose.Types.ObjectId(id) }).sort({ updatedAt: -1 })
         if (!chats) return res.status(404).json("No chats found")
         res.status(200).json(chats)
@@ -113,7 +114,7 @@ export const createChat = async (req, res, next) => {
         if (backgroundPromise) {
             backgroundPromise.then(async (bgTitle) => {
                 if (bgTitle && bgTitle !== fallbackTitle) {
-                    await Conversation.findByIdAndUpdate(newChat._id, { title: bgTitle });
+                    await Conversation.findByIdAndUpdate(newChat._id, { title: bgTitle }, { unsummarizedMessageCount: 2 });
                     console.log(`[Naming Agent] Background updated chat ${newChat._id} title to: "${bgTitle}"`);
                 }
             }).catch((err) => {

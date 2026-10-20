@@ -8,7 +8,16 @@ const conversationSchema = new Schema({
         ref: "User"
     },
     title: {
-        type: String
+        type: String,
+        default: "New Chat"
+    },
+    summary: {
+        type: String,
+        default: ""
+    },
+    unsummarizedMessageCount: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true })
 
