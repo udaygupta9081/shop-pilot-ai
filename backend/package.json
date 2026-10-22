@@ -9,18 +9,20 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon index.js",
+    "serve": "node index.js",
     "import:dry": "node scripts/importCsv.js --dry-run",
     "import": "node scripts/importCsv.js",
     "check:categories": "node scripts/checkCategoryMap.js"
   },
   "dependencies": {
-    "axios": "^1.20.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "csv-parse": "^7.0.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^7.5.0",
+    "google-auth-library": "^9.15.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.4",
     "nodemon": "^1.14.10"

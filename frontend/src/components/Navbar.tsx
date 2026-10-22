@@ -1,8 +1,19 @@
 import { Link } from "react-router-dom";
 import SearchBox from "./SearchBox";
 import CategoryMenu from "./CategoryMenu";
+import { useAuth } from "../context/authContext";
 
 const Navbar = () => {
+  const { user, loading, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      /* server unreachable: stay logged in, the user can try again */
+    }
+  };
+
   return (
     <div className="relative z-40 w-full h-16 bg-[#111111]">
       <div className="w-[80%] h-full mx-auto flex items-center justify-between gap-4">
@@ -22,12 +33,28 @@ const Navbar = () => {
             <p>Ask ShopPilot</p>
             <p>🌟</p>
           </div>
-          <Link
-            to="/login"
-            className="text-white hover:text-gray-300 cursor-pointer transition"
-          >
-            <p>Login</p>
-          </Link>
+          {!loading &&
+            (user ? (
+              <div className="flex items-center gap-4">
+                <span className="text-gray-300 max-w-[10rem] truncate" title={user.email}>
+                  Hi, {user.name.split(" ")[0]}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="text-white hover:text-gray-300 cursor-pointer transition"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="text-white hover:text-gray-300 cursor-pointer transition"
+              >
+                <p>Login</p>
+              </Link>
+            ))}
         </div>
       </div>
     </div>
