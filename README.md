@@ -8,6 +8,17 @@ The platform aims to provide personalized product recommendations, intelligent p
 Our goal is to build a smarter, more personalized, and interactive shopping platform that helps users discover products, make informed purchasing decisions, and enjoy a seamless shopping experience.
 
 ---
+## 👥 Project Team
+
+This project is developed collaboratively by the following team members:
+
+| S. No. | Name | Roll Number |
+|:---:|---|:---:|
+| 1 | Uday Kumar Gupta | 20251651098 |
+| 2 | Ritesh | 20251651046 |
+| 3 | Yash | 20251651105 |
+| 4 | Mukesh | 20251651059 |
+| 5 | Koushik | 20251651052 |
 
 ## 🚀 Key Features
 
