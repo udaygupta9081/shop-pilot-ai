@@ -1,0 +1,16 @@
+{
+  "name": "campuseats-graphql",
+  "version": "1.0.0",
+  "description": "CS543 Assignment 7 - CampusEats GraphQL service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.12.2",
+    "@as-integrations/express4": "^1.1.2",
+    "express": "^4.21.2",
+    "graphql": "^16.10.0",
+    "mysql2": "^3.14.0"
+  }
+}

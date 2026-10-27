@@ -1,0 +1,21 @@
+type Dish {
+  id: ID!
+  name: String!
+  price: Float!
+  available: Boolean!
+}
+
+input AddDishInput {
+  name: String!
+  price: Float!
+  available: Boolean
+}
+
+type Query {
+  dishes: [Dish!]!
+  dish(id: ID!): Dish
+}
+
+type Mutation {
+  addDish(input: AddDishInput!): Dish!
+}
