@@ -117,20 +117,6 @@ The platform is intended to integrate frontend components, backend services, pro
 
 ---
 
-## 👥 Project Team
-
-This project is developed collaboratively by the following team members.
-
-| S. No. | Name | Roll Number |
-|:---:|---|:---:|
-| 1 | **Uday Kumar Gupta** | 20251651098 |
-| 2 | **Ritesh** | 20251651046 |
-| 3 | **Yash** | 20251651105 |
-| 4 | **Mukesh** | 20251651059 |
-| 5 | **Koushik** | 20251651052 |
-
----
-
 ## 🔮 Future Enhancements
 
 - Advanced recommendation systems using collaborative and content-based filtering.
