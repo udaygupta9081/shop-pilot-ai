@@ -45,7 +45,15 @@ const CategoryCarousel = ({ level, limit = 12, variant = "badge" }: CategoryCaro
       </div>
     );
   }
-  if (error) return <p className="text-sm text-gray-500" role="alert">Categories are unavailable right now.</p>;
+  if (error) {
+    // "Category not found" here means the backend is still running OLD code without /categories/ranked.
+    const hint = /not found/i.test(error) ? " Restart the backend with the latest files." : "";
+    return (
+      <p className="text-sm text-gray-500" role="alert">
+        Categories are unavailable right now. ({error}){hint}
+      </p>
+    );
+  }
   if (!data || data.length === 0) return null;
 
   return (
