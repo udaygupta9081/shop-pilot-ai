@@ -2,8 +2,9 @@ import { Product } from "../models/Product.js";
 
 // Marketing labels in the source data, not real aisles: never featured on the homepage.
 const EXCLUDED_MAIN = ["customers-most-loved", "other"];
-const MIN_PRODUCTS = 100;       // tiny categories give noisy averages, so they are skipped
-const HIGH_SCORE = 95;          // "high scoring" product = AI score of 95 or more
+const MIN_PRODUCTS = 100;        // tiny categories give noisy averages, so they are skipped
+const HIGH_SCORE = 95;           // "high scoring" product = AI score of 95 or more
+const SPARE = 10;                // extra categories fetched in case a few have no usable photo
 const CACHE_MS = 10 * 60 * 1000; // the data only changes when you re-import, so cache for 10 minutes
 
 const cache = new Map(); // key -> { at, promise }
@@ -31,49 +32,54 @@ export function getRankedCategories({ level = "sub", limit = 12 } = {}) {
 
 async function compute(level, limit) {
   const isMain = level === "main";
-  const idField = isMain ? "$mainSlug" : "$subSlug";
+  const groupField = isMain ? "mainSlug" : "subSlug";
   const nameField = isMain ? "$mainCategory" : "$subcategory";
 
-  const rows = await Product.aggregate(
-    [
-      { $match: { aiProductScore: { $ne: null }, mainSlug: { $nin: EXCLUDED_MAIN } } },
-      {
-        $project: {
-          asin: 1, title: 1, imgUrl: 1, aiProductScore: 1, reviews: 1,
-          mainSlug: 1, mainCategory: 1, subSlug: 1, subcategory: 1,
-          hasImg: { $cond: [{ $gt: [{ $strLenCP: { $ifNull: ["$imgUrl", ""] } }, 0] }, 1, 0] },
-        },
+  // Step 1: one cheap pass over the products that only counts and averages
+  // (a few hundred small groups, no big sort, so it also works on a free Atlas cluster).
+  const groups = await Product.aggregate([
+    { $match: { aiProductScore: { $ne: null }, mainSlug: { $nin: EXCLUDED_MAIN } } },
+    {
+      $group: {
+        _id: `$${groupField}`,
+        name: { $first: nameField },
+        mainSlug: { $first: "$mainSlug" },
+        mainName: { $first: "$mainCategory" },
+        productCount: { $sum: 1 },
+        avgAiScore: { $avg: "$aiProductScore" },
+        highScoreCount: { $sum: { $cond: [{ $gte: ["$aiProductScore", HIGH_SCORE] }, 1, 0] } },
       },
-      // Best product first: has a picture, then highest AI score, then most reviews.
-      { $sort: { hasImg: -1, aiProductScore: -1, reviews: -1 } },
-      {
-        $group: {
-          _id: idField,
-          name: { $first: nameField },
-          mainSlug: { $first: "$mainSlug" },
-          mainName: { $first: "$mainCategory" },
-          productCount: { $sum: 1 },
-          avgAiScore: { $avg: "$aiProductScore" },
-          highScoreCount: { $sum: { $cond: [{ $gte: ["$aiProductScore", HIGH_SCORE] }, 1, 0] } },
-          top: { $first: { asin: "$asin", title: "$title", imgUrl: "$imgUrl", aiProductScore: "$aiProductScore" } },
-        },
-      },
-      { $match: { productCount: { $gte: MIN_PRODUCTS }, "top.imgUrl": { $nin: [null, ""] } } },
-      { $sort: { avgAiScore: -1, productCount: -1 } },
-      { $limit: limit },
-    ],
-    { allowDiskUse: true },
+    },
+    { $match: { productCount: { $gte: MIN_PRODUCTS } } },
+    { $sort: { avgAiScore: -1, productCount: -1 } },
+    { $limit: limit + SPARE },
+  ]);
+
+  // Step 2: for each of those categories, find its best product that has a picture.
+  const cards = await Promise.all(
+    groups.map(async (g) => {
+      const top = await Product.findOne({
+        [groupField]: g._id,
+        aiProductScore: { $ne: null },
+        imgUrl: { $nin: [null, ""] },
+      })
+        .sort({ aiProductScore: -1, reviews: -1 })
+        .select("asin title imgUrl aiProductScore")
+        .lean();
+      if (!top) return null;
+      return {
+        slug: g._id,
+        name: g.name,
+        type: isMain ? "main" : "sub",
+        mainSlug: g.mainSlug,
+        mainName: g.mainName,
+        productCount: g.productCount,
+        avgAiScore: Math.round(g.avgAiScore * 10) / 10,
+        highScoreCount: g.highScoreCount,
+        topProduct: { asin: top.asin, title: top.title, imgUrl: top.imgUrl, aiProductScore: top.aiProductScore },
+      };
+    }),
   );
 
-  return rows.map((r) => ({
-    slug: r._id,
-    name: r.name,
-    type: isMain ? "main" : "sub",
-    mainSlug: r.mainSlug,
-    mainName: r.mainName,
-    productCount: r.productCount,
-    avgAiScore: Math.round(r.avgAiScore * 10) / 10,
-    highScoreCount: r.highScoreCount,
-    topProduct: r.top,
-  }));
+  return cards.filter(Boolean).slice(0, limit);
 }
