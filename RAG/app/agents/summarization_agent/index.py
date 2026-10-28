@@ -9,8 +9,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from typing import List
 from .prompt import prompt
-# pyrefly: ignore [missing-import]
-from langchain_core.parser import StrOutputParser
 
 load_dotenv()
 logger = logging.getLogger("Summarization Agent")
@@ -23,11 +21,11 @@ def summarize(summary: str, messages:list):
             logger.warning("GOOGLE_API_KEY is not set.")
             return None
         
-        llm = ChatGoogleGenerativeAI(api_key=api_key, model="gemini-3.6-flash")
+        llm = ChatGoogleGenerativeAI(api_key=api_key, model=os.environ.get("GEMINI_MODEL", "gemini-3.6-flash"), max_retries=1, request_timeout=30.0)
         parser = StrOutputParser()
         chain = prompt | llm | parser
         response = chain.invoke({"summary": summary, "messages": messages})
-        return response
+        return response if isinstance(response, str) and response.strip() else None
     except Exception as e:
         logger.error(f"Failed to summarize: {e}")
         return None

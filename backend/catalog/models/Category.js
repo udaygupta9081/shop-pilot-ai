@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { productConnection } from "../../utils/db.js";
 
 const categorySchema = new mongoose.Schema(
   {
@@ -17,4 +18,4 @@ const categorySchema = new mongoose.Schema(
 categorySchema.index({ mainSlug: 1, order: 1 });
 categorySchema.index({ parentSlug: 1, order: 1 });
 
-export const Category = mongoose.models.Category || mongoose.model("Category", categorySchema);
+export const Category = productConnection.models.Category || productConnection.model("Category", categorySchema);

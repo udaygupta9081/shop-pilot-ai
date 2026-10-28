@@ -1,7 +1,7 @@
 /**
  * Pure, framework-free client-side validation for the Login and
  * Registration forms. No backend/API calls happen here — this only
- * checks the shape of the data the user typed.
+ * checks the shape of the data the user typed. The server re-checks everything.
  */
 
 export type FormErrors = Record<string, string>;
@@ -41,13 +41,17 @@ export interface RegisterFormValues {
   acceptedTerms: boolean;
 }
 
-const MIN_PASSWORD_LENGTH = 6;
+// Same rules as the backend (backend/utils/validators.js). The server checks them again.
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 72;
 
 export function validateRegisterForm(values: RegisterFormValues): FormErrors {
   const errors: FormErrors = {};
 
   if (!values.name.trim()) {
     errors.name = "Name is required.";
+  } else if (values.name.trim().length < 2) {
+    errors.name = "Name must be at least 2 characters.";
   }
 
   if (!values.email.trim()) {
@@ -60,6 +64,10 @@ export function validateRegisterForm(values: RegisterFormValues): FormErrors {
     errors.password = "Password is required.";
   } else if (values.password.length < MIN_PASSWORD_LENGTH) {
     errors.password = `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+  } else if (values.password.length > MAX_PASSWORD_LENGTH) {
+    errors.password = `Password must be at most ${MAX_PASSWORD_LENGTH} characters.`;
+  } else if (!/[A-Za-z]/.test(values.password) || !/\d/.test(values.password)) {
+    errors.password = "Password must contain at least one letter and one number.";
   }
 
   if (!values.confirmPassword) {

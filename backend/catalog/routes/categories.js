@@ -2,6 +2,7 @@ import { Router } from "express";
 import { Category } from "../models/Category.js";
 import { buildSearchFilter, cleanQuery } from "../utils/query.js";
 import { runProductQuery } from "./products.js";
+import { getRankedCategories } from "../utils/ranking.js";
 
 const router = Router();
 const pub = ({ _id, __v, createdAt, updatedAt, ...rest }) => rest;
@@ -13,6 +14,19 @@ router.get("/", async (_req, res, next) => {
     const mains = all.filter((c) => c.type === "main").map(pub);
     const subs = all.filter((c) => c.type === "sub").map(pub);
     res.json(mains.map((m) => ({ ...m, subcategories: subs.filter((s) => s.parentSlug === m.slug) })));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/categories/ranked?level=main|sub&limit=12
+// Categories ordered by average AI product score, each with its best product's image.
+// (Must stay ABOVE "/:slug", otherwise "ranked" would be treated as a category slug.)
+router.get("/ranked", async (req, res, next) => {
+  try {
+    const level = req.query.level === "main" ? "main" : "sub";
+    const limit = Math.min(30, Math.max(1, Number.parseInt(req.query.limit, 10) || 12));
+    res.json(await getRankedCategories({ level, limit }));
   } catch (err) {
     next(err);
   }
@@ -55,3 +69,4 @@ router.get("/:slug/products", async (req, res, next) => {
 });
 
 export default router;
+

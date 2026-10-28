@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple, List, Set
+from typing import Tuple, List, Set, Optional
 # pyrefly: ignore [missing-import]
 from langchain_core.documents import Document
 # pyrefly: ignore [missing-import]
@@ -8,16 +8,26 @@ from langchain_tavily import TavilySearch
 logger = logging.getLogger("ShopPilot.ReviewAgent.Search")
 
 
-def search_sources(product_name: str, max_results: int = 8) -> Tuple[List[str], List[Document]]:
+class TavilySearchError(RuntimeError):
+    """Raised (only when raise_on_error=True) so callers can tell a failure from an empty result."""
+
+
+def search_sources(
+    product_name: str,
+    max_results: int = 8,
+    queries: Optional[List[str]] = None,
+    raise_on_error: bool = False,
+) -> Tuple[List[str], List[Document]]:
     """
     Searches Tavily for product reviews across multiple review and discussion angles,
     returning discovered URLs and pre-extracted snippet Documents.
+    `queries` overrides the default review angles; `raise_on_error` re-raises failures.
     """
     print(f"\n{'='*60}", flush=True)
     print(f"🔍 [STEP 1: TAVILY SEARCH] Starting search for: '{product_name}'", flush=True)
     try:
         search = TavilySearch(max_results=max_results)
-        queries = [
+        queries = queries or [
             f"{product_name} review",
             f"{product_name} reddit reviews",
             f"{product_name} vs alternatives comparison",
@@ -55,4 +65,6 @@ def search_sources(product_name: str, max_results: int = 8) -> Tuple[List[str], 
     except Exception as e:
         print(f"⚠️ [TAVILY ERROR] Search failed: {e}", flush=True)
         logger.error(f"Tavily search failed: {e}")
+        if raise_on_error:
+            raise TavilySearchError(str(e)) from e
         return [], []

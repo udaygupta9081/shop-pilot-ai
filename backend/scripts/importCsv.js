@@ -13,7 +13,7 @@ import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
 import { parse } from "csv-parse";
-import mongoose from "mongoose";
+import { productConnection } from "../utils/db.js";
 import { normalizeRow } from "../catalog/utils/normalize.js";
 import { CATEGORY_TREE, UNMAPPED_MAIN } from "../catalog/config/categoryMap.js";
 import { Product } from "../catalog/models/Product.js";
@@ -135,8 +135,8 @@ async function rebuildCategories() {
 async function main() {
   console.log(`${DRY_RUN ? "[DRY RUN] " : ""}Reading ${FILE}`);
   if (!DRY_RUN) {
-    await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 8000 });
-    console.log(`Connected to MongoDB database "${mongoose.connection.name}"`);
+    await productConnection.openUri(MONGODB_URI, { serverSelectionTimeoutMS: 8000 });
+    console.log(`Connected to MongoDB database "${productConnection.name}"`);
     await Product.init(); // make sure indexes (incl. unique asin) exist before upserting
   }
 
@@ -223,12 +223,12 @@ async function main() {
   unmappedLabels.forEach((n, l) => console.log(`   - "${l}": ${n}`));
   console.log(`Full report: ${REPORT}`);
 
-  if (!DRY_RUN) await mongoose.disconnect();
+  if (!DRY_RUN) await productConnection.close();
   process.exitCode = stats.writeErrors ? 2 : 0;
 }
 
 main().catch(async (err) => {
   console.error("Import failed:", err.message);
-  try { await mongoose.disconnect(); } catch { /* ignore */ }
+  try { await productConnection.close(); } catch { /* ignore */ }
   process.exit(1);
 });

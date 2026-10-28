@@ -3,6 +3,7 @@ import type {
   Category,
   CategoryProductsResponse,
   ProductDetails,
+  RankedCategory,
   SearchResponse,
   SortKey,
 } from "../types/catalog";
@@ -19,6 +20,10 @@ export function getCategories(): Promise<Category[]> {
   }
   return categoriesPromise;
 }
+
+/** Categories ordered by average AI product score (highest first). */
+export const getRankedCategories = (level: "main" | "sub", limit: number, signal?: AbortSignal) =>
+  apiGet<RankedCategory[]>("/categories/ranked", { level, limit }, signal);
 
 export const getCategory = (slug: string, signal?: AbortSignal) =>
   apiGet<Category>(`/categories/${encodeURIComponent(slug)}`, undefined, signal);

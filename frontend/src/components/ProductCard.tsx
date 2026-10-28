@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { memo } from "react";
 import type { ProductSummary } from "../types/catalog";
-import { formatCount, formatPrice, formatRating } from "../utils/format";
+import { formatAiScore, formatCount, formatPrice, formatRating } from "../utils/format";
 import ProductImage from "./ProductImage";
 
 export interface ProductCardProps {
@@ -17,6 +17,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const price = formatPrice(product.price);
   const rating = formatRating(product.stars);
   const reviews = formatCount(product.reviews);
+  const aiScore = formatAiScore(product.aiProductScore);
   const to = `/product/${encodeURIComponent(product.asin)}`;
 
   return (
@@ -49,6 +50,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
             )}
             {reviews && <span className="text-gray-500">({reviews})</span>}
           </div>
+        )}
+
+        {aiScore && (
+          <p
+            className="self-start inline-flex items-center gap-1 rounded-sm bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 text-[11px] font-semibold"
+            title="AI product score out of 100"
+          >
+            AI Score {aiScore}/100
+          </p>
         )}
 
         {price && <p className="text-base font-bold text-black">{price}</p>}

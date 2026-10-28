@@ -4,7 +4,7 @@ import { buildSearchFilter, cleanQuery, parsePagination, parseSort, MIN_QUERY_LE
 
 const router = Router();
 
-const LIST_FIELDS = "asin title imgUrl price stars reviews isBestSeller mainCategory mainSlug subcategory subSlug";
+const LIST_FIELDS = "asin title imgUrl price stars reviews isBestSeller aiProductScore mainCategory mainSlug subcategory subSlug";
 const ASIN_RE = /^[A-Za-z0-9]{10}$/;
 
 /** Shared by /search, /products?search= and category listings. */

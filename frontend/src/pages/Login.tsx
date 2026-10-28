@@ -3,6 +3,8 @@ import AuthLayout from "../components/AuthLayout";
 import TextField from "../components/TextField";
 import PasswordField from "../components/PasswordField";
 import GoogleAuthSection from "../components/GoogleAuthSection";
+import { ApiError } from "../api/client";
+import { useAuth } from "../context/authContext";
 import {
   validateLoginForm,
   isFormValid,
@@ -10,29 +12,56 @@ import {
 } from "../utils/authValidation";
 
 /**
- * Login page — FRONTEND ONLY.
- *
- * There is no backend authentication yet. Submitting a valid form just
- * shows a demo success message; nothing is sent anywhere, nothing is
- * persisted, and no session/token is created.
+ * Login page. Validates the form, then calls the backend (POST /api/auth/login)
+ * through the AuthContext. After a successful login the app redirects away
+ * from this page (see GuestOnlyRoute in App.tsx).
  */
 const Login = () => {
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [showForgotNote, setShowForgotNote] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Turns a failed request into messages on the page.
+  const showError = (err: unknown) => {
+    if (err instanceof ApiError) {
+      setErrors(err.fields);
+      setFormError(Object.keys(err.fields).length ? null : err.message);
+    } else {
+      setFormError("Something went wrong. Please try again.");
+    }
+    setSubmitting(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return; // ignore double clicks while a request is running
 
     const validationErrors = validateLoginForm({ email, password });
     setErrors(validationErrors);
-    setSubmitted(false);
+    setFormError(null);
+    if (!isFormValid(validationErrors)) return;
 
-    if (isFormValid(validationErrors)) {
-      setSubmitted(true);
+    setSubmitting(true);
+    try {
+      await login(email.trim(), password, rememberMe);
+    } catch (err) {
+      showError(err);
+    }
+  };
+
+  const handleGoogle = async (credential: string) => {
+    if (submitting) return;
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      await loginWithGoogle(credential);
+    } catch (err) {
+      showError(err);
     }
   };
 
@@ -52,7 +81,6 @@ const Login = () => {
           value={email}
           onChange={(value) => {
             setEmail(value);
-            setSubmitted(false);
           }}
           placeholder="Enter your email"
           error={errors.email}
@@ -65,7 +93,6 @@ const Login = () => {
           value={password}
           onChange={(value) => {
             setPassword(value);
-            setSubmitted(false);
           }}
           placeholder="Enter your password"
           error={errors.password}
@@ -93,30 +120,30 @@ const Login = () => {
 
         {showForgotNote && (
           <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-5">
-            Password reset isn't available yet — it will be added once
-            backend authentication is connected.
+            Password reset isn't available yet.
           </p>
         )}
 
-        {submitted && (
+        {formError && (
           <div
-            role="status"
-            className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 mb-5"
+            role="alert"
+            className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-5"
           >
-            Login form submitted successfully. Backend authentication will
-            be connected later.
+            {formError}
           </div>
         )}
 
         <button
           type="submit"
-          className="w-full bg-black hover:bg-neutral-800 text-white font-semibold text-sm py-2.5 rounded-lg transition-colors cursor-pointer active:scale-[0.99]"
+          disabled={submitting}
+          aria-busy={submitting}
+          className="w-full bg-black hover:bg-neutral-800 text-white font-semibold text-sm py-2.5 rounded-lg transition-colors cursor-pointer active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Login Now
+          {submitting ? "Logging in…" : "Login Now"}
         </button>
       </form>
 
-      <GoogleAuthSection />
+      <GoogleAuthSection onCredential={handleGoogle} disabled={submitting} />
     </AuthLayout>
   );
 };

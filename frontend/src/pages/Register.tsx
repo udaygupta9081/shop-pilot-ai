@@ -3,6 +3,8 @@ import AuthLayout from "../components/AuthLayout";
 import TextField from "../components/TextField";
 import PasswordField from "../components/PasswordField";
 import GoogleAuthSection from "../components/GoogleAuthSection";
+import { ApiError } from "../api/client";
+import { useAuth } from "../context/authContext";
 import {
   validateRegisterForm,
   isFormValid,
@@ -10,23 +12,46 @@ import {
 } from "../utils/authValidation";
 
 /**
- * Registration page — FRONTEND ONLY.
- *
- * There is no backend authentication yet. Submitting a valid form just
- * shows a demo success message; nothing is sent anywhere, nothing is
- * persisted, and no account/session/token is created.
+ * Registration page. Validates the form, then calls the backend
+ * (POST /api/auth/register) through the AuthContext. The new user is signed in
+ * automatically and the app redirects away from this page (see GuestOnlyRoute).
  */
 const Register = () => {
+  const { register, loginWithGoogle } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Turns a failed request into messages on the page.
+  const showError = (err: unknown) => {
+    if (err instanceof ApiError) {
+      setErrors(err.fields);
+      setFormError(Object.keys(err.fields).length ? null : err.message);
+    } else {
+      setFormError("Something went wrong. Please try again.");
+    }
+    setSubmitting(false);
+  };
+
+  const handleGoogle = async (credential: string) => {
+    if (submitting) return;
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      await loginWithGoogle(credential);
+    } catch (err) {
+      showError(err);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return; // ignore double clicks while a request is running
 
     const validationErrors = validateRegisterForm({
       name,
@@ -36,10 +61,14 @@ const Register = () => {
       acceptedTerms,
     });
     setErrors(validationErrors);
-    setSubmitted(false);
+    setFormError(null);
+    if (!isFormValid(validationErrors)) return;
 
-    if (isFormValid(validationErrors)) {
-      setSubmitted(true);
+    setSubmitting(true);
+    try {
+      await register({ name: name.trim(), email: email.trim(), password, confirmPassword });
+    } catch (err) {
+      showError(err);
     }
   };
 
@@ -58,7 +87,6 @@ const Register = () => {
           value={name}
           onChange={(value) => {
             setName(value);
-            setSubmitted(false);
           }}
           placeholder="Enter your name"
           error={errors.name}
@@ -72,7 +100,6 @@ const Register = () => {
           value={email}
           onChange={(value) => {
             setEmail(value);
-            setSubmitted(false);
           }}
           placeholder="Enter your email"
           error={errors.email}
@@ -85,7 +112,6 @@ const Register = () => {
           value={password}
           onChange={(value) => {
             setPassword(value);
-            setSubmitted(false);
           }}
           placeholder="Create a password"
           error={errors.password}
@@ -98,7 +124,6 @@ const Register = () => {
           value={confirmPassword}
           onChange={(value) => {
             setConfirmPassword(value);
-            setSubmitted(false);
           }}
           placeholder="Confirm your password"
           error={errors.confirmPassword}
@@ -112,7 +137,6 @@ const Register = () => {
               checked={acceptedTerms}
               onChange={(e) => {
                 setAcceptedTerms(e.target.checked);
-                setSubmitted(false);
               }}
               className="w-4 h-4 mt-0.5 rounded border-gray-300 accent-black cursor-pointer shrink-0"
             />
@@ -130,25 +154,26 @@ const Register = () => {
           )}
         </div>
 
-        {submitted && (
+        {formError && (
           <div
-            role="status"
-            className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 mb-5"
+            role="alert"
+            className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-5"
           >
-            Registration form submitted successfully. Backend
-            authentication will be connected later.
+            {formError}
           </div>
         )}
 
         <button
           type="submit"
-          className="w-full bg-black hover:bg-neutral-800 text-white font-semibold text-sm py-2.5 rounded-lg transition-colors cursor-pointer active:scale-[0.99]"
+          disabled={submitting}
+          aria-busy={submitting}
+          className="w-full bg-black hover:bg-neutral-800 text-white font-semibold text-sm py-2.5 rounded-lg transition-colors cursor-pointer active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Register Now
+          {submitting ? "Creating account…" : "Register Now"}
         </button>
       </form>
 
-      <GoogleAuthSection />
+      <GoogleAuthSection onCredential={handleGoogle} disabled={submitting} />
     </AuthLayout>
   );
 };

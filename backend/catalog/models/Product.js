@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { productConnection } from "../../utils/db.js";
 
 const productSchema = new mongoose.Schema(
   {
@@ -37,4 +38,5 @@ productSchema.index({ reviews: -1 });
 productSchema.index({ stars: -1, reviews: -1 });
 productSchema.index({ price: 1 });
 
-export const Product = mongoose.models.Product || mongoose.model("Product", productSchema);
+// Lives in the product database (MONGO_URI), not the application database.
+export const Product = productConnection.models.Product || productConnection.model("Product", productSchema);

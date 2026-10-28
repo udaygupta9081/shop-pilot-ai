@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 import CategoriesIndex from "./pages/CategoriesIndex";
 import CategoryListing from "./pages/CategoryListing";
 import ProductDetail from "./pages/ProductDetail";
+import { GuestOnlyRoute } from "./components/RouteGuards";
 
 const Layout = () => {
   return (
@@ -31,8 +32,9 @@ const App = () => {
         <Route path="/categories/:mainSlug" element={<CategoryListing />} />
         <Route path="/categories/:mainSlug/:subSlug" element={<CategoryListing />} />
         <Route path="/product/:asin" element={<ProductDetail />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/* logged-in users are sent away from these two pages */}
+        <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
+        <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />
       </Route>
     </Routes>
   );

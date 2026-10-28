@@ -105,6 +105,7 @@ const CategoryListing = () => {
                 className="border border-gray-300 px-2 py-2 text-sm bg-white"
               >
                 <option value="rating">Top rated</option>
+                <option value="ai">Top AI score</option>
                 <option value="popular">Most reviewed</option>
                 <option value="price_asc">Price: low to high</option>
                 <option value="price_desc">Price: high to low</option>
