@@ -9,8 +9,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from typing import List
 from .prompt import prompt
-# pyrefly: ignore [missing-import]
-from langchain_core.parser import StrOutputParser
 
 load_dotenv()
 logger = logging.getLogger("Summarization Agent")
