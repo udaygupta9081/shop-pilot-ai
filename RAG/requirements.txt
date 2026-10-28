@@ -41,3 +41,6 @@ tqdm>=4.66.0                     # Progress bars during indexing
 # Optional: Serving RAG as an API
 fastapi>=0.111.0
 uvicorn>=0.30.0
+
+qdrant-client
+pymongo
