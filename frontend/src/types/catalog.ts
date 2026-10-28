@@ -55,4 +55,19 @@ export interface CategoryProductsResponse extends Paged<ProductSummary> {
   category: Category;
 }
 
-export type SortKey = "rating" | "popular" | "price_asc" | "price_desc";
+export type SortKey = "rating" | "popular" | "price_asc" | "price_desc" | "ai";
+
+/** A category ranked by its average AI product score, with its best product's picture. */
+export interface RankedCategory {
+  slug: string;
+  name: string;
+  type: "main" | "sub";
+  mainSlug: string;
+  mainName: string;
+  productCount: number;
+  /** average AI product score of every product in the category (0-100) */
+  avgAiScore: number;
+  /** how many products score 95 or more */
+  highScoreCount: number;
+  topProduct: { asin: string; title: string; imgUrl: string; aiProductScore: number };
+}

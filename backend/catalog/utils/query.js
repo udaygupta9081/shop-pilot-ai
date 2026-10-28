@@ -42,6 +42,8 @@ export function parseSort(sortKey) {
       return { sort: { price: 1, reviews: -1 }, extra: { price: { $ne: null } } };
     case "price_desc":
       return { sort: { price: -1, reviews: -1 }, extra: { price: { $ne: null } } };
+    case "ai":
+      return { sort: { aiProductScore: -1, reviews: -1 }, extra: { aiProductScore: { $ne: null } } };
     case "reviews":
     case "popular":
       return { sort: { reviews: -1 }, extra: {} };
