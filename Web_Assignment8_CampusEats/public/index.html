@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#fff8ee"><title>CampusEats | Campus Food</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="page-container">
+<header class="header">
+  <div class="brand"><div class="brand-icon">🍴</div><div class="brand-content"><h1>Campus<span>Eats</span></h1><p>Fresh. Delicious. On Campus.</p></div></div>
+  <div class="header-foods" aria-hidden="true"><span>🥪</span><span>🍜</span><span>🧋</span></div>
+  <div class="api-status"><span class="status-dot"></span><span>API Connected</span></div>
+</header>
+<main class="main-content">
+<section class="menu-card" id="catalogue">
+  <div class="card-heading"><div class="heading-icon">♨</div><div><h2>Our Dishes</h2><p>Discover your campus favourites</p></div><button class="refresh-btn" id="refresh-btn" type="button">↻ Refresh</button></div>
+  <div id="message" class="message" role="status" aria-live="polite" hidden></div>
+  <div class="table-wrapper"><table><thead><tr><th>#</th><th>Dish Name</th><th>Price (₹)</th><th>Available</th></tr></thead><tbody id="menu-list"><tr><td colspan="4" class="loading">Loading menu...</td></tr></tbody></table></div>
+</section>
+<section class="form-card" id="add-item">
+  <div class="card-heading"><div class="heading-icon">＋</div><div><h2>Add New Dish</h2><p>Add something delicious to the menu</p></div></div>
+  <div class="form-divider"></div>
+  <form id="item-form">
+    <div class="form-group"><label for="name">Dish Name</label><div class="input-wrapper"><input type="text" id="name" name="name" placeholder="Enter dish name" maxlength="80" required><span>🍴</span></div></div>
+    <div class="form-group"><label for="price">Price (₹)</label><div class="input-wrapper"><input type="number" id="price" name="price" placeholder="Enter price" min="0.01" step="0.01" required><span class="rupee">₹</span></div></div>
+    <div class="form-group"><label for="category">Category</label><select id="category" name="category" required><option value="">Select category</option><option value="Snacks">Snacks</option><option value="Main Course">Main Course</option><option value="Drinks">Drinks</option><option value="Desserts">Desserts</option></select></div>
+    <label class="availability"><input type="checkbox" id="available" name="available" checked><span>Available</span><span class="yes-label">(Yes)</span></label>
+    <button type="submit" class="submit-btn" id="submit-btn">♨ &nbsp; Add Dish</button>
+  </form>
+</section>
+</main>
+<footer class="footer"><div class="footer-brand"><h3>Campus<span>Eats</span><div class="footer-right"><h4>🍴 Good Food. Good Mood.</h4></div></footer>
+</div>
+<script>
+const API_URL='/items';
+const menuList=document.getElementById('menu-list');
+const message=document.getElementById('message');
+const form=document.getElementById('item-form');
+const submitBtn=document.getElementById('submit-btn');
+const refreshBtn=document.getElementById('refresh-btn');
+function showMessage(text,type='success'){message.textContent=text;message.className='message '+type;message.hidden=false;}
+async function loadMenu(){
+  menuList.innerHTML='<tr><td colspan="4" class="loading">Loading menu...</td></tr>';
+  try{
+    const response=await fetch(API_URL);
+    if(!response.ok) throw new Error('Unable to fetch menu');
+    const items=await response.json(); menuList.innerHTML='';
+    if(!items.length){menuList.innerHTML='<tr><td colspan="4" class="loading">No dishes available. Add your first dish!</td></tr>';return;}
+    items.forEach(item=>{
+      const row=document.createElement('tr');
+      const id=document.createElement('td');id.textContent=item.id;
+      const dish=document.createElement('td');const name=document.createElement('strong');name.textContent=item.name;
+      const category=document.createElement('small');category.className='category-label';category.textContent=item.category||'Menu item';dish.append(name,category);
+      const price=document.createElement('td');price.textContent='₹'+Number(item.price).toFixed(2);
+      const availabilityCell=document.createElement('td');const badge=document.createElement('span');
+      badge.className='availability-badge '+(item.available?'available':'unavailable');badge.textContent=item.available?'Available':'Unavailable';availabilityCell.appendChild(badge);
+      row.append(id,dish,price,availabilityCell);menuList.appendChild(row);
+    });
+  }catch(error){menuList.innerHTML='<tr><td colspan="4" class="error-row">Could not load the menu. Please check the server connection.</td></tr>';showMessage(error.message,'error');}
+}
+refreshBtn.addEventListener('click',loadMenu);
+form.addEventListener('submit',async event=>{
+  event.preventDefault();
+  const item={name:form.name.value.trim(),price:Number(form.price.value),category:form.category.value,available:form.available.checked};
+  if(!item.name||!item.category||!Number.isFinite(item.price)||item.price<=0){showMessage('Please enter valid dish details.','error');return;}
+  submitBtn.disabled=true;submitBtn.textContent='Adding Dish...';
+  try{
+    const response=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(item)});
+    const result=await response.json();if(!response.ok)throw new Error(result.error||'Unable to add dish');
+    showMessage(`Dish added successfully! HTTP ${response.status} Created.`);
+    form.reset();form.available.checked=true;await loadMenu();
+  }catch(error){showMessage(error.message,'error');}
+  finally{submitBtn.disabled=false;submitBtn.innerHTML='♨ &nbsp; Add Dish';}
+});
+loadMenu();
+</script>
+</body></html>
