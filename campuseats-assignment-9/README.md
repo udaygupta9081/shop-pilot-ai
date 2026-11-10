@@ -139,4 +139,4 @@ The Google Drive folder contains:
 - A short demonstration video of the secured application.
 - Screenshots of the five cases: **401** (no token), **login** (token returned), **200** (menu with token), **201** (restaurant adds a dish), **403** (customer tries to add a dish).
 
-[Google Drive — Demo Video and Screenshots](PASTE_YOUR_DRIVE_LINK_HERE)
+[Google Drive — Demo Video and Screenshots](https://drive.google.com/drive/folders/1mD3MxNsfEJiqeIlRAumN6QKI7ze1afcf)
