@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CampusEats Catalogue (Secured)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>CampusEats Catalogue</h1>
+<p class="sub">Assignment 09 &mdash; the menu API secured with JWT login and role-based access</p>
+
+<!-- 1. LOGIN -->
+<div class="card login">
+  <h3>1. Login</h3>
+  <form id="loginForm">
+    <input id="email" type="email" placeholder="Email" required>
+    <input id="password" type="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+    <button type="button" class="ghost" id="fillCustomer">Fill customer</button>
+    <button type="button" class="ghost" id="fillRestaurant">Fill restaurant</button>
+    <button type="button" class="danger" id="logoutBtn">Logout</button>
+  </form>
+  <div class="who out" id="who">Not signed in</div>
+</div>
+
+<!-- 2. MENU (GET /items, needs a token) -->
+<div class="card">
+  <h3>2. Menu &mdash; GET /items</h3>
+  <button type="button" id="loadBtn">Load menu (with token)</button>
+  <button type="button" class="ghost" id="loadNoTokenBtn">Load menu (no token)</button>
+  <div id="list"><span class="empty">Log in, then load the menu.</span></div>
+</div>
+
+<!-- 3. ADD A DISH (POST /items, restaurant only) -->
+<div class="card add">
+  <h3>3. Add a dish &mdash; POST /items (restaurant only)</h3>
+  <form id="addForm">
+    <input id="name" placeholder="Dish name" required>
+    <input id="price" type="number" min="0" placeholder="Price (rupees)" required>
+    <select id="category">
+      <option>Snacks</option>
+      <option>Main Course</option>
+      <option>Drinks</option>
+    </select>
+    <label class="chk"><input id="available" type="checkbox" checked> Available</label>
+    <button type="submit">Add dish</button>
+  </form>
+</div>
+
+<!-- 4. WHAT THE SERVER ANSWERED (for screenshots) -->
+<div class="card resp">
+  <h3>4. Last server response</h3>
+  <div class="status" id="status">No request yet</div>
+  <pre id="body">&nbsp;</pre>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const STATUS_TEXT = { 200: 'OK', 201: 'Created', 400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 422: 'Unprocessable Entity' };
+
+let token = sessionStorage.getItem('token');
+let email = sessionStorage.getItem('email');
+
+// Send a request to the API. The token (if we have one) goes in the Authorization header.
+async function api(method, path, body, sendToken = true) {
+  const headers = {};
+  if (body) headers['Content-Type'] = 'application/json';
+  if (sendToken && token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* no body */ }
+  showResponse(method + ' ' + path, res.status, data);
+  return { res, data };
+}
+
+// Show the status code and body of the last response (this is what you screenshot).
+function showResponse(label, code, data) {
+  const st = $('status');
+  st.textContent = label + '  \u2192  ' + code + ' ' + (STATUS_TEXT[code] || '');
+  st.className = 'status ' + (code < 400 ? 'ok' : 'bad');
+  $('body').textContent = JSON.stringify(data, null, 2);
+}
+
+// Read the role from the token payload -- for DISPLAY only; the server never trusts the browser.
+function roleFromToken(t) {
+  try {
+    const b64 = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(b64)).role;
+  } catch (e) { return null; }
+}
+
+function updateWho() {
+  const who = $('who');
+  who.textContent = '';
+  if (!token) { who.className = 'who out'; who.textContent = 'Not signed in'; return; }
+  who.className = 'who';
+  who.append('Signed in as ' + (email || 'user') + ' \u00b7 role: ');
+  const badge = document.createElement('span');
+  badge.className = 'role';
+  badge.textContent = roleFromToken(token) || 'unknown';
+  who.append(badge);
+}
+
+function renderItems(items) {
+  const list = $('list');
+  list.textContent = '';
+  if (!items.length) { list.innerHTML = '<span class="empty">The menu is empty.</span>'; return; }
+  items.forEach((i) => {
+    const row = document.createElement('div');
+    row.className = 'dish' + (i.available ? '' : ' off');
+    const left = document.createElement('span');
+    const name = document.createElement('span');
+    name.className = 'name'; name.textContent = i.name;
+    const meta = document.createElement('span');
+    meta.className = 'meta'; meta.textContent = i.category + (i.available ? '' : ' \u00b7 unavailable');
+    left.append(name, meta);
+    const price = document.createElement('span');
+    price.className = 'price'; price.textContent = '\u20B9' + i.price;
+    row.append(left, price);
+    list.append(row);
+  });
+}
+
+// READ: GET /items (needs a valid token)
+async function loadMenu(sendToken = true) {
+  const { res, data } = await api('GET', '/items', null, sendToken);
+  if (res.ok) renderItems(data);
+  else $('list').innerHTML = '<span class="empty">Menu not loaded &mdash; see the server response below.</span>';
+}
+
+// LOGIN: POST /login -> token
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const { res, data } = await api('POST', '/login', { email: $('email').value, password: $('password').value }, false);
+  if (res.ok) {
+    token = data.token;
+    email = $('email').value;
+    sessionStorage.setItem('token', token);
+    sessionStorage.setItem('email', email);
+    updateWho();
+    $('password').value = '';
+  }
+});
+
+$('fillCustomer').addEventListener('click', () => { $('email').value = 'asha@campus.edu'; $('password').value = 'customer123'; });
+$('fillRestaurant').addEventListener('click', () => { $('email').value = 'mealhub@campus.edu'; $('password').value = 'resto123'; });
+
+$('logoutBtn').addEventListener('click', () => {
+  token = null; email = null;
+  sessionStorage.clear();
+  updateWho();
+  $('list').innerHTML = '<span class="empty">Log in, then load the menu.</span>';
+  $('status').textContent = 'Logged out'; $('status').className = 'status';
+  $('body').textContent = '\u00a0';
+});
+
+$('loadBtn').addEventListener('click', () => loadMenu(true));
+$('loadNoTokenBtn').addEventListener('click', () => loadMenu(false));
+
+// WRITE: POST /items (server allows restaurant/admin only; a customer gets 403)
+$('addForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const { res } = await api('POST', '/items', {
+    name: $('name').value,
+    price: $('price').value,
+    category: $('category').value,
+    available: $('available').checked
+  });
+  if (res.status === 201) {
+    e.target.reset();
+    $('available').checked = true;
+    const r = await fetch('/items', { headers: { Authorization: 'Bearer ' + token } }); // refresh the list quietly
+    if (r.ok) renderItems(await r.json());
+  }
+});
+
+updateWho();
+</script>
+</body>
+</html>

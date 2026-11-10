@@ -1,0 +1,16 @@
+{
+  "name": "campuseats-assignment-9",
+  "version": "1.0.0",
+  "description": "CS543 Assignment 9 - CampusEats Menu REST API secured with JWT and role-based access",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
