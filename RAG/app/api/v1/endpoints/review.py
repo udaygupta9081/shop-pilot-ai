@@ -3,7 +3,9 @@ from fastapi import APIRouter, Query
 # pyrefly: ignore [missing-import]
 from app.schemas.product import Product
 from app.schemas.verdict import VerdictResponse
-from app.agents.review_agent.agent import get_or_build_verdict
+from app.agents.review_agent.agent import ReviewSynthesisError, get_or_build_verdict
+from fastapi import HTTPException
+from app.agents.review_agent.search import TavilySearchError
 
 router = APIRouter(tags=["Review Agent"])
 
@@ -18,9 +20,11 @@ def get_verdict(
 ):
     """
     Review Agent Verdict Endpoint:
-    Performs ephemeral web research (Tavily + LangChain + FAISS + Gemini)
+    Performs ephemeral web research (Tavily + LangChain + FAISS + Ollama)
     to generate a structured BUY/WAIT/AVOID verdict with score, strengths, and limitations.
     """
     product = Product(id=product_id, name=product_name)
-    return get_or_build_verdict(product, include_debug=debug)
-
+    try:
+        return get_or_build_verdict(product, include_debug=debug)
+    except (TavilySearchError, ReviewSynthesisError) as exc:
+        raise HTTPException(status_code=502, detail="Review search is temporarily unavailable.") from exc

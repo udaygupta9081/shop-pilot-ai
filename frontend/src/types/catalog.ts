@@ -24,6 +24,17 @@ export interface ProductDetails extends ProductSummary {
   predictionLabel: string | null;
 }
 
+export interface ProductVerdict {
+  score: number;
+  verdict: "BUY" | "WAIT" | "AVOID";
+  strengths: string[];
+  limitations: string[];
+  summary: string;
+  sources_used: number;
+  sources: { title: string; url: string }[];
+  reviews: { title: string; url: string; snippet: string }[];
+}
+
 export interface Paged<T> {
   items: T[];
   page: number;

@@ -2,8 +2,8 @@ import mongoose from "mongoose"
 import Conversation from "../Model/conversationModel.js"
 import Message from "../Model/messageModel.js"
 import {
-    acquireLock, findExistingTurn, getRequestId, isObjectIdString, maybeSummarize, releaseLock, runTurn,
-    sendChatError, validateQuery
+    acquireLock, findExistingTurn, getRequestId, includeProductMetadata, isObjectIdString, maybeSummarize, releaseLock, runTurn,
+    processRagTurn, sanitizeGuestContext, sendChatError, validateQuery
 } from "../services/chatService.js"
 
 export const getAllChatMessages = async (req, res, next) => {
@@ -15,7 +15,8 @@ export const getAllChatMessages = async (req, res, next) => {
         const chat = await Conversation.findById(chatId).select("userId").lean()
         if (!chat) return res.status(404).json("No chat found")
         if (chat.userId?.toString() !== id) return res.status(403).json("Forbidden")
-        const messages = await Message.find({ conversationId: new mongoose.Types.ObjectId(chatId) }).sort({ _id: 1 })
+        const messages = await Message.find({ conversationId: new mongoose.Types.ObjectId(chatId) }).sort({ _id: 1 }).lean()
+        await includeProductMetadata(messages)
         return res.status(200).json({ messages })
     } catch (error) {
         next(error)
@@ -59,12 +60,44 @@ export const createMessage = async (req, res, next) => {
             intent: turn.intent,
             products: turn.products,
             sources: turn.sources,
+            retrievalSources: turn.retrievalSources,
+            needsClarification: turn.needsClarification,
             summarized
         })
     } catch (error) {
         return sendChatError(error, res, next)
     } finally {
         if (lock) await releaseLock(chatId, lock.lockId)
+    }
+}
+
+export const createGuestMessage = async (req, res, next) => {
+    try {
+        const query = validateQuery(req.body?.query)
+        const context = sanitizeGuestContext(req.body?.conversation_context)
+        const turn = await processRagTurn({ query, context })
+        return res.status(200).json({
+            success: true,
+            answer: turn.answer,
+            intent: turn.intent,
+            products: turn.products,
+            sources: turn.sources,
+            retrievalSources: turn.retrievalSources,
+            needsClarification: turn.needsClarification,
+            assistantMessage: {
+                sender: "Assistent",
+                message: turn.answer,
+                metadata: {
+                    intent: turn.intent,
+                    productReferences: turn.references,
+                    products: turn.products,
+                    sources: turn.sources,
+                    retrievalSources: turn.retrievalSources
+                }
+            }
+        })
+    } catch (error) {
+        return sendChatError(error, res, next)
     }
 }
 

@@ -5,6 +5,7 @@ const RETRIEVE_TIMEOUT_MS = Number(process.env.RAG_RETRIEVE_TIMEOUT_MS) || 75000
 const RESPOND_TIMEOUT_MS = Number(process.env.RAG_RESPOND_TIMEOUT_MS) || 75000
 const SUMMARY_TIMEOUT_MS = Number(process.env.RAG_SUMMARY_TIMEOUT_MS) || 20000
 const NAMING_TIMEOUT_MS = Number(process.env.RAG_NAMING_TIMEOUT_MS) || 10000
+const VERDICT_TIMEOUT_MS = Number(process.env.RAG_VERDICT_TIMEOUT_MS) || 120000
 
 export class RagServiceError extends Error {
     constructor(stage, cause) {
@@ -31,3 +32,16 @@ export const retrieve = (body) => post("retrieval", "/api/v1/orchestrator/retrie
 export const respond = (body) => post("generation", "/api/v1/agent/respond", body, RESPOND_TIMEOUT_MS)
 export const summarize = (body) => post("summarization", "/api/v1/summarization/summarize", body, SUMMARY_TIMEOUT_MS)
 export const generateTitle = (query) => post("naming", "/api/v1/naming/title", { query }, NAMING_TIMEOUT_MS)
+
+export const getProductVerdict = async (productId, productName) => {
+    try {
+        const { data } = await axios.get(`${RAG_SERVICE_URL}/api/v1/verdict`, {
+            params: { product_id: productId, product_name: productName, refresh: true },
+            timeout: VERDICT_TIMEOUT_MS
+        })
+        return data
+    } catch (error) {
+        console.error("[RAG verdict]", error.response?.status ?? error.code ?? "", error.message)
+        throw new RagServiceError("verdict", error)
+    }
+}

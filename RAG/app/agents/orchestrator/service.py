@@ -173,14 +173,17 @@ def orchestrate(req: RetrieveRequest) -> RetrieveResponse:
 
     known = {r.product_id: r for r in refs}
     resolved = [pid for pid in dict.fromkeys(decision.resolved_product_ids) if pid in known]
-    if not resolved and set(decision.intents) & {"product_details", "product_reviews", "product_comparison"}:
+    more_details = bool(re.search(r"\btell me more\b", req.query, re.IGNORECASE))
+    if not resolved and (more_details or set(decision.intents) & {"product_details", "product_reviews", "product_comparison"}):
         resolved = resolve_ordinals(req.query, refs)  # deterministic safety net for ordinal references
     unavailable = [pid for pid in resolved if not known[pid].available]
 
     intents = list(dict.fromkeys(decision.intents))
+    if more_details and resolved and "product_details" not in intents:
+        intents.append("product_details")
     needs_products = bool(set(intents) & {"product_details", "product_reviews", "product_comparison"})
     wants_new = "product_recommendation" in intents or decision.wants_new_products
-    needs_web = "product_reviews" in intents or decision.needs_web_research
+    needs_web = "product_reviews" in intents or decision.needs_web_research or (more_details and bool(resolved))
     if intents == ["general_question"]:
         wants_new = needs_web = False
 
@@ -227,7 +230,8 @@ def orchestrate(req: RetrieveRequest) -> RetrieveResponse:
         if not targets and not refs:
             targets = [(req.query[:150], None)]  # user named a product we don't have in context
         if targets:
-            web_results, web_errors = run_web_research(targets, decision.web_aspect or "reviews")
+            aspect = decision.web_aspect or ("reviews, pros and cons" if more_details else "reviews")
+            web_results, web_errors = run_web_research(targets, aspect)
             errors.extend(web_errors)
             if len(web_errors) < len(targets):
                 sources.append("tavily")

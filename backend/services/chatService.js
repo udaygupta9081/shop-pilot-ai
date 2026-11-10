@@ -184,14 +184,61 @@ export const findExistingTurn = async (conversationId, requestId) => {
 // ------------------------------------------------------------------ one chat turn
 const publicProduct = ({ product_id, ...fields }) => ({ productId: product_id, ...fields })
 
-/**
- * intent/retrieval (FastAPI) -> product enrichment (MONGO_URI) -> response generation (FastAPI) -> persistence.
- * Nothing is persisted unless generation succeeds.
- */
-export const runTurn = async ({ conversation, query, requestId }) => {
-    const context = await buildContext(conversation)
+export const includeProductMetadata = async (messages) => {
+    const needsProducts = messages.filter((message) =>
+        message.sender === "Assistent" &&
+        !message.metadata?.products?.length &&
+        message.metadata?.productReferences?.length
+    )
+    if (!needsProducts.length) return messages
+
+    const ids = needsProducts.flatMap((message) =>
+        message.metadata.productReferences.map((reference) => reference.productId?.toString())
+    )
+    const { products } = await getProductsByIds(ids)
+    const byId = new Map(products.map(({ product_id, ...product }) => [product_id, { productId: product_id, ...product }]))
+    for (const message of needsProducts) {
+        const restored = message.metadata.productReferences
+            .map((reference) => byId.get(reference.productId?.toString()))
+            .filter(Boolean)
+        message.metadata = { ...message.metadata, products: restored }
+    }
+    return messages
+}
+
+export const sanitizeGuestContext = (rawContext) => {
+    if (!rawContext || typeof rawContext !== "object" || Array.isArray(rawContext)) rawContext = {}
+    const recentMessages = Array.isArray(rawContext.recent_messages) ? rawContext.recent_messages : []
+    const references = Array.isArray(rawContext.referenced_products) ? rawContext.referenced_products : []
+    return {
+        summary: typeof rawContext.summary === "string" ? rawContext.summary.slice(0, 500) : "",
+        recent_messages: recentMessages.slice(-5).flatMap((message) => {
+            if (!message || !["user", "assistant"].includes(message.role) || typeof message.content !== "string") return []
+            const content = message.content.trim().slice(0, 600)
+            return content ? [{ role: message.role, content }] : []
+        }),
+        referenced_products: references.slice(0, 8).flatMap((reference, index) => {
+            if (!reference || !isObjectIdString(reference.product_id)) return []
+            const position = Number.isInteger(reference.position) && reference.position > 0 ? reference.position : index + 1
+            const turn = Number.isInteger(reference.turn) && reference.turn >= 0 ? Math.min(reference.turn, 20) : 0
+            const kind = reference.kind === "discussed" ? "discussed" : "recommended"
+            const title = typeof reference.title === "string" ? reference.title.slice(0, 100) : null
+            return [{
+                product_id: reference.product_id.toLowerCase(),
+                position,
+                kind,
+                turn,
+                title
+            }]
+        })
+    }
+}
+
+export const processRagTurn = async ({ query, context }) => {
     const retrieval = await rag.retrieve({ query, conversation_context: context })
-    if (!retrieval || typeof retrieval.intent !== "string") throw new ChatError(502, "The AI service returned an invalid response.", "invalid_retrieval")
+    if (!retrieval || typeof retrieval.intent !== "string") {
+        throw new ChatError(502, "The AI service returned an invalid response.", "invalid_retrieval")
+    }
 
     let enrichment
     try {
@@ -218,29 +265,66 @@ export const runTurn = async ({ conversation, query, requestId }) => {
     const answer = typeof generation?.answer === "string" ? generation.answer.trim() : ""
     if (!answer) throw new ChatError(502, "The AI service returned an invalid response.", "invalid_generation")
 
-    const byId = new Map(enrichment.products.map((p) => [p.product_id, p]))
+    const byId = new Map(enrichment.products.map((product) => [product.product_id, product]))
     const usedIds = [...new Set(generation.product_ids || [])].filter((id) => byId.has(id))
-    const references = usedIds.map((id, i) => ({ productId: id, position: i + 1, title: byId.get(id).title }))
-    const qdrantIds = new Set((retrieval.retrieved || []).filter((h) => h.source === "qdrant").map((h) => h.product_id))
-    const sources = (generation.sources || []).filter((s) => typeof s?.url === "string").map(({ title, url }) => ({ title: title || "", url }))
+    const products = usedIds.map((id) => publicProduct(byId.get(id)))
+    const references = products.map((product, index) => ({
+        productId: product.productId,
+        position: index + 1,
+        title: product.title
+    }))
+    const qdrantIds = new Set((retrieval.retrieved || [])
+        .filter((hit) => hit.source === "qdrant")
+        .map((hit) => hit.product_id))
+    const sourceByUrl = new Map()
+    for (const source of [...(generation.sources || []), ...(retrieval.web_results || [])]) {
+        if (typeof source?.url === "string" && /^https?:\/\//i.test(source.url)) {
+            sourceByUrl.set(source.url, { title: source.title || "", url: source.url })
+        }
+    }
+    const sources = [...sourceByUrl.values()]
+
+    return {
+        answer,
+        intent: generation.intent || retrieval.intent,
+        products,
+        references,
+        sources,
+        retrievalSources: retrieval.retrieval_sources || [],
+        retrievalErrors: errors.map((error) => error.source),
+        needsClarification: Boolean(generation.needs_clarification),
+        retrieved: retrieval.retrieved || [],
+        productSet: references.length ? {
+            kind: products.some((product) => qdrantIds.has(product.productId)) ? "recommended" : "discussed",
+            products: references
+        } : null
+    }
+}
+
+/**
+ * intent/retrieval (FastAPI) -> product enrichment (MONGO_URI) -> response generation (FastAPI) -> persistence.
+ * Nothing is persisted unless generation succeeds.
+ */
+export const runTurn = async ({ conversation, query, requestId }) => {
+    const context = await buildContext(conversation)
+    const turn = await processRagTurn({ query, context })
 
     let saved
     try {
         saved = await persistTurn({
             conversationId: conversation._id,
             query,
-            answer,
+            answer: turn.answer,
             requestId,
             metadata: {
-                intent: generation.intent || retrieval.intent,
-                productReferences: references.length ? references : undefined,
-                sources: sources.length ? sources : undefined,
-                retrievalSources: retrieval.retrieval_sources || [],
-                retrievalErrors: errors.length ? errors.map((e) => e.source) : undefined
+                intent: turn.intent,
+                productReferences: turn.references.length ? turn.references : undefined,
+                products: turn.products,
+                sources: turn.sources.length ? turn.sources : undefined,
+                retrievalSources: turn.retrievalSources,
+                retrievalErrors: turn.retrievalErrors.length ? turn.retrievalErrors : undefined
             },
-            productSet: references.length
-                ? { kind: usedIds.some((id) => qdrantIds.has(id)) ? "recommended" : "discussed", products: references }
-                : null
+            productSet: turn.productSet
         })
     } catch (error) {
         if (error?.code === 11000 && requestId) {
@@ -252,11 +336,12 @@ export const runTurn = async ({ conversation, query, requestId }) => {
 
     return {
         ...saved,
-        answer,
-        intent: generation.intent || retrieval.intent,
-        products: usedIds.map((id) => publicProduct(byId.get(id))),
-        sources,
-        needsClarification: Boolean(generation.needs_clarification)
+        answer: turn.answer,
+        intent: turn.intent,
+        products: turn.products,
+        sources: turn.sources,
+        retrievalSources: turn.retrievalSources,
+        needsClarification: turn.needsClarification
     }
 }
 

@@ -29,10 +29,10 @@ const Navbar = () => {
             Home
           </Link>
           <CategoryMenu />
-          <div className="flex items-center gap-2 text-white hover:text-gray-300 cursor-pointer transition">
+          <Link to="/chat" className="flex items-center gap-2 text-white hover:text-gray-300 transition">
             <p>Ask ShopPilot</p>
             <p>🌟</p>
-          </div>
+          </Link>
           {!loading &&
             (user ? (
               <div className="flex items-center gap-4">

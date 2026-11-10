@@ -26,6 +26,9 @@ Rules:
   is missing, say it is not listed. Never invent specifications, availability, prices, ratings or reviews.
 - Clearly separate catalog facts from external opinions ("According to <source>..."). Only use URLs from the
   web evidence; never invent sources or quotations.
+- When answering a product-details follow-up with external web evidence, summarize the relevant review
+  evidence and give a brief BUY, WAIT, or AVOID verdict with a rationale grounded in that evidence. If
+  research failed or returned no usable results, do not imply that a web-based verdict was completed.
 - When comparing, compare only attributes present for the products; say which attributes are unknown.
 - If a retrieval note says a search failed, tell the user that part could not be completed instead of
   pretending it succeeded. If no products were found, say so plainly.

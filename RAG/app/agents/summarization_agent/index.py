@@ -1,31 +1,24 @@
 # pyrefly: ignore [missing-import]
 import logging
-import os
 # pyrefly: ignore [missing-import]
-from dotenv import load_dotenv
-# pyrefly: ignore [missing-import]
-from langchain_google_genai import ChatGoogleGenerativeAI
-# pyrefly: ignore [missing-import]
-from langchain_core.output_parsers import StrOutputParser
-from typing import List
+from pydantic import BaseModel, Field
+
+from app.core.llm import get_chat_model
 from .prompt import prompt
 
-load_dotenv()
 logger = logging.getLogger("Summarization Agent")
 
-def summarize(summary: str, messages:list):
-    
+
+class ConversationSummary(BaseModel):
+    summary: str = Field(..., min_length=1, description="A concise updated conversation summary.")
+
+
+def summarize(summary: str, messages: str):
     try:
-        api_key = os.environ.get("GOOGLE_API_KEY")
-        if not api_key:
-            logger.warning("GOOGLE_API_KEY is not set.")
-            return None
-        
-        llm = ChatGoogleGenerativeAI(api_key=api_key, model=os.environ.get("GEMINI_MODEL", "gemini-3.6-flash"), max_retries=1, request_timeout=30.0)
-        parser = StrOutputParser()
-        chain = prompt | llm | parser
+        chain = prompt | get_chat_model().with_structured_output(ConversationSummary)
         response = chain.invoke({"summary": summary, "messages": messages})
-        return response if isinstance(response, str) and response.strip() else None
-    except Exception as e:
-        logger.error(f"Failed to summarize: {e}")
+        text = " ".join(response.summary.split())
+        return " ".join(text.split()[:100]) or None
+    except Exception:
+        logger.exception("Failed to summarize")
         return None

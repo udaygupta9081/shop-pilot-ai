@@ -18,6 +18,7 @@ export class ApiError extends Error {
 
 interface ErrorBody {
   error?: string;
+  message?: string;
   fieldErrors?: Record<string, string>;
 }
 
@@ -27,7 +28,7 @@ async function toApiError(res: Response): Promise<ApiError> {
   let fields: Record<string, string> = {};
   try {
     const body = (await res.json()) as ErrorBody;
-    if (body.error) message = body.error;
+    if (body.error || body.message) message = body.error || body.message || message;
     if (body.fieldErrors) fields = body.fieldErrors;
   } catch {
     /* non-JSON error body */

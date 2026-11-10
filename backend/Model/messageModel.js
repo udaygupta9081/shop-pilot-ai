@@ -12,6 +12,22 @@ const productReferenceSchema = new Schema({
     title: { type: String }
 }, { _id: false })
 
+const assistantProductSchema = new Schema({
+    productId: { type: mongoose.Types.ObjectId, required: true },
+    asin: String,
+    title: String,
+    imgUrl: String,
+    productURL: String,
+    price: Number,
+    stars: Number,
+    reviews: Number,
+    isBestSeller: Boolean,
+    boughtInLastMonth: Number,
+    mainCategory: String,
+    subcategory: String,
+    aiProductScore: Number
+}, { _id: false })
+
 const messageSchema = new Schema({
     conversationId: {
         type: mongoose.Types.ObjectId,
@@ -30,6 +46,7 @@ const messageSchema = new Schema({
         requestId: { type: String },
         intent: { type: String },
         productReferences: { type: [productReferenceSchema], default: undefined },
+        products: { type: [assistantProductSchema], default: undefined },
         sources: { type: [{ title: String, url: String, _id: false }], default: undefined },
         retrievalSources: { type: [String], default: undefined },
         retrievalErrors: { type: [String], default: undefined }

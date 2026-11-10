@@ -1,11 +1,20 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { Product } from "../models/Product.js";
 import { buildSearchFilter, cleanQuery, parsePagination, parseSort, MIN_QUERY_LENGTH } from "../utils/query.js";
+import { getProductVerdict, RagServiceError } from "../../services/ragClient.js";
 
 const router = Router();
 
 const LIST_FIELDS = "asin title imgUrl price stars reviews isBestSeller aiProductScore mainCategory mainSlug subcategory subSlug";
 const ASIN_RE = /^[A-Za-z0-9]{10}$/;
+const verdictRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { success: false, message: "Verdict request limit reached. Please try again later." },
+});
 
 /** Shared by /search, /products?search= and category listings. */
 export async function runProductQuery({ filter, query, defaultSort }) {
@@ -52,6 +61,31 @@ router.get("/", async (req, res, next) => {
     res.json(await runProductQuery({ filter, query: req.query, defaultSort: "rating" }));
   } catch (err) {
     next(err);
+  }
+});
+
+router.post("/:asin/verdict", verdictRateLimit, async (req, res, next) => {
+  try {
+    if (!ASIN_RE.test(req.params.asin)) return res.status(400).json({ success: false, message: "Invalid product id." });
+    const product = await Product.findOne({ asin: req.params.asin.toUpperCase() })
+      .select("_id asin title")
+      .lean();
+    if (!product) return res.status(404).json({ success: false, message: "Product not found." });
+
+    const verdict = await getProductVerdict(product._id.toString(), product.title);
+    return res.status(200).json({ success: true, product: { asin: product.asin, title: product.title }, verdict });
+  } catch (error) {
+    if (error instanceof RagServiceError) {
+      const status = error.timedOut ? 504 : 502;
+      return res.status(status).json({
+        success: false,
+        message: error.timedOut
+          ? "Review research took too long. Please try again."
+          : "Review research is temporarily unavailable. Please try again.",
+        code: `verdict_${error.timedOut ? "timeout" : "failed"}`,
+      });
+    }
+    return next(error);
   }
 });
 

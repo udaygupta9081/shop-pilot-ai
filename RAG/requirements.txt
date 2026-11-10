@@ -11,7 +11,7 @@ langchain-text-splitters>=0.2.0
 # LLM Providers
 langchain-openai>=0.1.7          # For OpenAI LLMs / Embeddings (Paid API)
 langchain-groq>=0.1.3            # For Fast & Free Llama-3 LLM inference (Free API key)
-langchain-google-genai>=1.0.3    # For Google Gemini Flash LLM & Embeddings (Free tier API key)
+langchain-ollama>=1.1.0          # Local Ollama chat models with reasoning control
 openai>=1.30.0
 
 # Free & Local HuggingFace Embeddings

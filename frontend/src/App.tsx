@@ -11,6 +11,7 @@ import CategoriesIndex from "./pages/CategoriesIndex";
 import CategoryListing from "./pages/CategoryListing";
 import ProductDetail from "./pages/ProductDetail";
 import { GuestOnlyRoute } from "./components/RouteGuards";
+import Chat from "./pages/Chat";
 
 const Layout = () => {
   return (
@@ -35,6 +36,9 @@ const App = () => {
         {/* logged-in users are sent away from these two pages */}
         <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
         <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />
+      </Route>
+      <Route element={<><Navbar /><Outlet /></>}>
+        <Route path="/chat" element={<Chat />} />
       </Route>
     </Routes>
   );

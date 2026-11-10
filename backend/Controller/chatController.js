@@ -2,7 +2,7 @@ import Conversation from "../Model/conversationModel.js"
 import Message from "../Model/messageModel.js"
 import mongoose from "mongoose"
 import { generateTitle } from "../services/ragClient.js"
-import { getRequestId, isObjectIdString, newLock, releaseLock, runTurn, sendChatError, validateQuery } from "../services/chatService.js"
+import { getRequestId, includeProductMetadata, isObjectIdString, newLock, releaseLock, runTurn, sendChatError, validateQuery } from "../services/chatService.js"
 
 export const getChat = async (req, res, next) => {
     try {
@@ -13,7 +13,8 @@ export const getChat = async (req, res, next) => {
         const chat = await Conversation.findOne({ _id: new mongoose.Types.ObjectId(chatId) }).select("-activeRequest")
         if (!chat) return res.status(404).json("No chat found")
         if (chat.userId.toString() !== id) return res.status(403).json("Forbidden")
-        const messages = await Message.find({ conversationId: new mongoose.Types.ObjectId(chatId) }).sort({ createdAt: 1 })
+        const messages = await Message.find({ conversationId: new mongoose.Types.ObjectId(chatId) }).sort({ createdAt: 1 }).lean()
+        await includeProductMetadata(messages)
         res.status(200).json({ chat, messages })
     } catch (error) {
         next(error)
@@ -25,9 +26,55 @@ export const getAllChats = async (req, res, next) => {
     try {
         const { id } = req.user;
         if (!id) return res.status(401).json("Unauthorized")
-        const chats = await Conversation.find({ userId: new mongoose.Types.ObjectId(id) }).sort({ updatedAt: -1 })
-        if (!chats) return res.status(404).json("No chats found")
+        const chats = await Conversation.find({ userId: new mongoose.Types.ObjectId(id) })
+            .select("-activeRequest").sort({ updatedAt: -1 }).limit(100).lean()
         res.status(200).json(chats)
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const renameChat = async (req, res, next) => {
+    try {
+        const { id } = req.user ?? {}
+        if (!id) return res.status(401).json({ success: false, message: "Unauthorized" })
+        if (!isObjectIdString(req.params.chatId)) return res.status(400).json({ success: false, message: "Invalid chat id" })
+        const title = typeof req.body?.title === "string" ? req.body.title.trim() : ""
+        if (!title || title.length > 80) {
+            return res.status(400).json({ success: false, message: "Title must be between 1 and 80 characters." })
+        }
+        const chat = await Conversation.findOneAndUpdate(
+            { _id: req.params.chatId, userId: new mongoose.Types.ObjectId(id) },
+            { $set: { title } },
+            { new: true, projection: { activeRequest: 0 } }
+        ).lean()
+        if (!chat) return res.status(404).json({ success: false, message: "No chat found." })
+        return res.status(200).json({ success: true, chat })
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const deleteChat = async (req, res, next) => {
+    try {
+        const { id } = req.user ?? {}
+        if (!id) return res.status(401).json({ success: false, message: "Unauthorized" })
+        if (!isObjectIdString(req.params.chatId)) return res.status(400).json({ success: false, message: "Invalid chat id" })
+        const filter = { _id: req.params.chatId, userId: new mongoose.Types.ObjectId(id) }
+        const chat = await Conversation.findOne(filter).select("activeRequest").lean()
+        if (!chat) return res.status(404).json({ success: false, message: "No chat found." })
+        if (chat.activeRequest?.id) {
+            return res.status(409).json({ success: false, message: "Wait for the current response before deleting this chat." })
+        }
+        const deleted = await Conversation.deleteOne({
+            ...filter,
+            $or: [{ "activeRequest.id": null }, { "activeRequest.id": { $exists: false } }]
+        })
+        if (deleted.deletedCount !== 1) {
+            return res.status(409).json({ success: false, message: "Wait for the current response before deleting this chat." })
+        }
+        await Message.deleteMany({ conversationId: new mongoose.Types.ObjectId(req.params.chatId) })
+        return res.status(200).json({ success: true, chatId: req.params.chatId })
     } catch (error) {
         next(error)
     }

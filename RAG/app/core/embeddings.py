@@ -1,7 +1,9 @@
-import os
+import logging
+
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from app.core.config import EMBEDDING_MODEL_NAME
+
+logger = logging.getLogger(__name__)
 
 # Global embedding model cache to avoid reloading PyTorch weights on each request
 _embeddings_instance = None
@@ -17,7 +19,7 @@ def get_embeddings():
                 model_name=EMBEDDING_MODEL_NAME
             )
             print("✅ [INIT] Embeddings model loaded successfully.", flush=True)
-        except Exception as e:
-            print(f"⚠️ HuggingFace embeddings load error: {e}, falling back to Gemini embeddings", flush=True)
-            _embeddings_instance = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        except Exception:
+            logger.exception("Failed to load local HuggingFace embeddings")
+            raise
     return _embeddings_instance

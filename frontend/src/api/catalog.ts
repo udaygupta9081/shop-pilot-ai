@@ -1,8 +1,9 @@
-import { apiGet } from "./client";
+import { apiGet, apiSend } from "./client";
 import type {
   Category,
   CategoryProductsResponse,
   ProductDetails,
+  ProductVerdict,
   RankedCategory,
   SearchResponse,
   SortKey,
@@ -52,3 +53,11 @@ export const searchProducts = (
 
 export const getProduct = (asin: string, signal?: AbortSignal) =>
   apiGet<ProductDetails>(`/products/${encodeURIComponent(asin)}`, undefined, signal);
+
+export const getProductVerdict = (asin: string, signal?: AbortSignal) =>
+  apiSend<{ success: true; product: { asin: string; title: string }; verdict: ProductVerdict }>(
+    "POST",
+    `/products/${encodeURIComponent(asin)}/verdict`,
+    undefined,
+    signal,
+  );

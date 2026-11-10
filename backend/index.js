@@ -26,7 +26,7 @@ app.use(cors({
     origin: (origin, cb) => cb(null, isAllowedOrigin(origin)), // rules live in utils/origins.js
     credentials: true
 }));
-app.use(express.json({ limit: "10kb" })); // CHANGED: small JSON bodies only
+app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 
 // ADDED: health check
