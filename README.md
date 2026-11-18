@@ -828,7 +828,7 @@ Project team: Uday Kumar Gupta, Ritesh, Yash Raj, Mukesh, and Koushik.
 ## Screenshots
 
 ### Searchmenu
-![Searchmenu]([images/homepage.png](https://github.com/udaygupta9081/shop-pilot-ai/blob/main/Searchmenu.jpeg))
+![Searchmenu](https://github.com/udaygupta9081/shop-pilot-ai/blob/main/Searchmenu.jpeg)
 ### categories
 ![Categories](https://github.com/udaygupta9081/shop-pilot-ai/blob/main/Categories.jpeg)
 ### Chatbot
