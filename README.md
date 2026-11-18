@@ -405,7 +405,6 @@ All paths are prefixed with `/api`. Endpoints marked 🔒 require the `sid` sess
 | POST | `/auth/logout` | End the session | none |
 | GET | `/categories` | Main categories with subcategories (non-empty only) | none |
 | GET | `/categories/ranked` | Categories ordered by average AI score | `level=main\|sub`, `limit` (1–30, default 12) |
-
 | GET | `/categories/:slug` | One category | none |
 | GET | `/categories/:slug/products` | Products in a category | `page`, `limit`, `sort`, `q` |
 | GET | `/products` | List or search products | `search`, `category` (sub slug), `main`, `bestSeller`, `page`, `limit` (≤ 60), `sort` |
