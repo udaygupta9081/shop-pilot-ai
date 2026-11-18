@@ -1,4 +1,3 @@
-<div align="center">
 
 # ShopPilot AI
 ---
